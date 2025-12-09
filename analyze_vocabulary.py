@@ -1419,9 +1419,16 @@ def generate_report(user_data, data_dir='data', utc_offset=0):
     return final_html
 
 if __name__ == "__main__":
+    import sys
+    
+    # Determined input file
+    input_file = "data/my_russian_words.json"
+    if len(sys.argv) > 1:
+        input_file = sys.argv[1]
+    
     # Load User JSON
-    if os.path.exists("data/my_russian_words.json"):
-        with open("data/my_russian_words.json", "r") as f:
+    if os.path.exists(input_file):
+        with open(input_file, "r") as f:
             user_data = json.load(f)
         
         report_html = generate_report(user_data, data_dir="data")
@@ -1430,4 +1437,5 @@ if __name__ == "__main__":
             f.write(report_html)
         print(f"DONE. Report generated at: {OUTPUT_HTML}")
     else:
-        print("Error: data/my_russian_words.json not found.")
+        print(f"Error: Input file '{input_file}' not found.")
+        print("Usage: python analyze_vocabulary.py [path_to_json_file]")
