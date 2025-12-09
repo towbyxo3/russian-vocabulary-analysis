@@ -5,6 +5,8 @@ A simple, client-side web tool to visualize your learning progress on [OpenRussi
 **[🚀 Launch Web Analyzer](https://towbyxo3.github.io/openrussian-vocabulary-analysis/)**  
 ([View Example Report](https://towbyxo3.github.io/openrussian-vocabulary-analysis/assets/example.html))
 
+![Report Preview](assets/preview.png)
+
 ### How to get your data
 Since OpenRussian doesn't have an export button (yet), we just grab the data the website uses.
 
