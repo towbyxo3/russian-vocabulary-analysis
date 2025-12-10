@@ -1,4 +1,4 @@
-packages = ["pandas", "numpy", "plotly"]
+packages = ["pandas", "numpy", "plotly", "tzdata"]
 
 [[fetch]]
 from = "src"

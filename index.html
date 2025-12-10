@@ -141,13 +141,11 @@
                 href="https://github.com/towbyxo3/openrussian-vocabulary-analysis#how-to-get-your-data" target="_blank"
                 style="color: #3498db; text-decoration: none;">How do I get my data?</a></p>
 
-        <!-- Timezone Selector -->
-        <div style="margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <label for="timezone-offset" style="color: #7f8c8d; font-size: 0.9rem;">Timezone:</label>
-            <select id="timezone-offset"
-                style="padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; background: #fff; color: #2c3e50; font-family: 'Inter', sans-serif;">
-                <!-- Populated by JS -->
-            </select>
+        <!-- Timezone (Auto-Detected) -->
+        <div
+            style="margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px; color: #7f8c8d; font-size: 0.9rem;">
+            <span>Timezone:</span>
+            <span id="timezone-display" style="font-weight: 600; color: #2c3e50;">Detecting...</span>
         </div>
 
         <div class="drop-zone" id="drop-zone">
@@ -258,16 +256,19 @@ async def handle_file_upload(event):
         content = await file.text()
         user_data = json.loads(content)
         
-        # Get Timezone Offset
-        offset_val = document.getElementById("timezone-offset").value
-        utc_offset = int(offset_val) if offset_val else 0
+        # Get Timezone Config
+        tz_name = js.Intl.DateTimeFormat().resolvedOptions().timeZone
+        # Fallback to offset if needed (js.userOffset is not directly accessible this way efficiently, 
+        # better to just pass 0 and rely on tz_name, or recalculate)
+        # We will pass 0 as offset and rely on name. If name fails, Python falls back to 0. 
+        # Ideally we could pass offset too but name is primary now.
         
         # Run Analysis
         # Yield to allow UI update
         await asyncio.sleep(0.1)
         
         try:
-            html_report = analyze_vocabulary.generate_report(user_data, data_dir="data", utc_offset=utc_offset)
+            html_report = analyze_vocabulary.generate_report(user_data, data_dir="data", utc_offset=0, timezone_name=tz_name)
         except Exception as e:
             log_error(f"Python Error during analysis:\n{traceback.format_exc()}")
             document.getElementById("loading").style.display = "none"
@@ -308,21 +309,13 @@ file_input.addEventListener("change", upload_proxy)
 
     <!-- JS Helper for Script Execution -->
     <script>
-        // Populate Timezones
+        // Populate Timezone Info
         (function () {
-            const select = document.getElementById("timezone-offset");
-            const userOffset = -new Date().getTimezoneOffset() / 60; // Minutes to hours, inverted
-
-            for (let i = -12; i <= 14; i++) {
-                const option = document.createElement("option");
-                option.value = i;
-                const sign = i >= 0 ? "+" : "";
-                option.text = `UTC${sign}${i}`;
-                if (i === userOffset || (i === 0 && userOffset === 0)) { // Simple match, floats might miss e.g. India (5.5) but strictly sticking to ints for now as per Python logic
-                    // Handle half-hour zones roughly by selecting nearest int for now
-                    if (Math.round(userOffset) === i) option.selected = true;
-                }
-                select.appendChild(option);
+            try {
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                document.getElementById("timezone-display").textContent = tz || "UTC";
+            } catch (e) {
+                document.getElementById("timezone-display").textContent = "UTC (Default)";
             }
         })();
 

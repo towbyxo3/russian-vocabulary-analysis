@@ -46,8 +46,8 @@ def fmt_date(dt):
 
 # HTML Builder
 
-def generate_report(user_data, data_dir='data', utc_offset=0):
-    print(f">>> LOADING DATA... (Offset: {utc_offset}h)")
+def generate_report(user_data, data_dir='data', utc_offset=0, timezone_name=None):
+    print(f">>> LOADING DATA... (Offset: {utc_offset}h, Zone: {timezone_name})")
 
     # Parse User Data
     user_items = []
@@ -81,8 +81,24 @@ def generate_report(user_data, data_dir='data', utc_offset=0):
     df_user = pd.DataFrame(user_items)
     df_user = df_user.sort_values("added")
     
-    # Apply Timezone Offset
-    if utc_offset != 0:
+    # Apply Timezone
+    # 1. Try Named Timezone (Accurate DST)
+    if timezone_name:
+        try:
+            # Check if NaT/empty
+            if not df_user.empty:
+                # Timestamps from UNIX are UTC (naive in Pandas usually)
+                df_user['added'] = df_user['added'].dt.tz_localize('UTC').dt.tz_convert(timezone_name)
+                # Convert to "Wall Time" (remove timezone info but keep local time)
+                df_user['added'] = df_user['added'].dt.tz_localize(None)
+        except Exception as e:
+            print(f"Timezone conversion failed ({timezone_name}): {e}. Falling back to fixed offset.")
+            # Fallback
+            if utc_offset != 0:
+                df_user['added'] = df_user['added'] + pd.Timedelta(hours=utc_offset)
+    
+    # 2. Fallback to Fixed Offset
+    elif utc_offset != 0:
         df_user['added'] = df_user['added'] + pd.Timedelta(hours=utc_offset)
 
     # Load Reference CSVs
